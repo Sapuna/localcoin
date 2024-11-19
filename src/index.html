@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Token - Wallet</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@truffle/contract@4.3.5/dist/truffle-contract.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.10.2/dist/web3.min.js"></script>
+
+    <script>
+        window.onload = function () {
+            if (!localStorage.getItem("isAdminLoggedIn")) {
+                window.location.href = "admin-login.html"; // Redirect to login if not logged in
+            }
+
+            loadMembers();
+        };
+    </script>
+<style>
+    html, body {
+    height: 100%; /* Ensures the body takes full height */
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(120deg, #0a0b0d, #1d2125);
+    font-family: 'Arial', sans-serif;
+    color: #fff;
+    overflow-x: hidden;
+    animation: fadeInBackground 1s ease-in;
+}
+
+/* Background Animation */
+@keyframes fadeInBackground {
+    from {
+        background-color: #000;
+    }
+    to {
+        background-color: #0a0b0d;
+    }
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, #0b3d1a, #00a24c);
+    color: white;
+    padding: 20px 0;
+    transition: all 0.3s ease-in-out;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+header:hover {
+    background: linear-gradient(135deg, #0b3d1a, #24f576);
+}
+
+.navbar-brand h1 {
+    font-size: 1.8rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: white;
+}
+
+.navbar-brand img {
+    width: 10%;
+    border-radius: 50%;
+}
+
+footer {
+    background-color: #28a745;
+    padding: 1rem;
+    text-align: center;
+    color: #ffff;
+    margin-top: auto; /* Pushes the footer to the bottom */
+}
+
+/* Make sure the page content is flexed above the footer */
+section {
+    flex-grow: 1; /* Makes section content grow and push footer down */
+}
+
+/* Button and form styles */
+.btn-primary {
+    background-color: #28a745;  /* Green color */
+    border-color: #28a745;  /* Green color */
+}
+
+.btn-primary:hover {
+    background-color: #218838;  /* Darker green on hover */
+}
+
+.btn-warning {
+    background-color: transparent; /* Transparent background */
+    color: green; /* Green text color */
+    border: 2px solid green; /* Green border */
+    transition: all 0.3s ease; /* Smooth transition for hover effects */
+}
+
+.btn-warning:hover {
+    background-color: green !important; /* Green background on hover */
+    color: white !important; /* White text on hover */
+}
+
+.give-token-button {
+    background-color: #28a745;  /* Green color */
+    color: white;
+    border: none;
+    padding: 0.5rem 1.2rem;
+    border-radius: 5px; /* Adjust border-radius to match edit and delete buttons */
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.give-token-button:hover {
+    background-color: #23df4f !important;  /* Lighter green on hover */
+}
+
+.form-control {
+    background-color: #232323;
+    color: #32e600;  /* Bright green text color */
+    border: 1px solid #555;
+    border-radius: 10px;
+    padding: 0.6rem;  /* Reduced padding */
+    margin-bottom: 15px;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 10px rgba(50, 230, 0, 0.9);  /* Green focus shadow */
+    transform: translateY(-2px);
+}
+
+.btn-add-member {
+    background-color: #28a745;  /* Green color */
+    color: white;
+    border-radius: 5px;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+}
+
+.btn-add-member:hover {
+    background-color: #2955;  /* Lighter green on hover */
+}
+
+/* Delete Button Styles */
+.btn-danger {
+    background-color: transparent;  /* Light red background */
+    border-color: #be1711;  /* Matching border */
+    color: #be1711;
+    padding: 0.25rem 0.5rem;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.btn-danger:hover {
+    background-color: #e57373;  /* Darker red on hover */
+    border-color: #e57373;  /* Darker red border */
+    transform: scale(1.05);  /* Slightly enlarge on hover */
+}
+
+.btn-danger:focus {
+    box-shadow: 0 0 5px rgba(231, 163, 161, 0.5);  /* Light red shadow on focus */
+}
+
+/* Table styles with box-shadow and border radius */
+.table {
+    border-radius: 10px;  /* Rounded corners */
+    border: 1px solid #555;  /* Border around the table */
+    margin-top: 20px;
+    background-color: #1c1e22;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.6);  /* Box shadow for depth */
+}
+
+.table th, .table td {
+    vertical-align: middle;
+    padding: 1rem;
+    color: #fff;  /* Set text color of data values to white */
+}
+
+.table th {
+    background-color: #333;
+    color: #32e600;  /* Green accent for headers */
+    text-align: center;
+}
+
+.table-striped tbody tr:nth-child(odd) {
+    background-color: #8b8f97;
+}
+
+.table-striped tbody tr:nth-child(even) {
+    background-color: #24272b;
+}
+
+.table-striped tbody tr td {
+    text-align: center;
+}
+
+
+</style>
+
+
+</head>
+
+<body>
+    <header class="navbar navbar-expand-sm">
+        <div class="container-fluid justify-content-center">
+            <a class="navbar-brand" href="#">
+                <div>
+                    <h1 class="text-center">Tokenized Reward System for Local Community</h1>
+                </div>
+            </a>
+        </div>
+    </header>
+
+    <section class="container mt-5">
+        <div class="my-4">
+            <h2 class="text-center">Local Community Details</h2>
+            <form id="addMemberForm" class="mb-4">
+                <div class="row g-2">
+                    <div class="col-md-2">
+                        <input type="text" id="memberName" class="form-control" placeholder="Name" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="email" id="memberEmail" class="form-control" placeholder="Email" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" id="memberPhone" class="form-control" placeholder="Phone" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" id="memberToken" class="form-control" placeholder="Token Earned" required>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" id="memberWallet" class="form-control" placeholder="Wallet Address" required>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-add-member">Add</button>
+                    </div>
+                </div>
+            </form>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Token Earned</th>
+                        <th>Wallet Address</th>
+                        <th>Transfer Token</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="memberTableBody">
+                    <!-- Dynamic member rows will be added here -->
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <footer>
+        <div>&copy; 2024@BlockChain_ GCIT+</div>
+    </footer>
+
+    <script>
+        let members = JSON.parse(localStorage.getItem("members")) || [];
+        let editingIndex = -1; // Track which member is being edited
+
+        document.getElementById("addMemberForm").addEventListener("submit", (event) => {
+            event.preventDefault();
+            if (editingIndex === -1) {
+                addMember(); // If not editing, add new member
+            } else {
+                updateMember(); // If editing, update existing member
+            }
+        });
+
+        function addMember() {
+            const name = document.getElementById("memberName").value;
+            const email = document.getElementById("memberEmail").value;
+            const phone = document.getElementById("memberPhone").value;
+            const token = document.getElementById("memberToken").value;
+            const wallet = document.getElementById("memberWallet").value;
+
+            const member = { name, email, phone, token, wallet };
+            members.push(member);
+            saveMembers();
+            renderMembers();
+            document.getElementById("addMemberForm").reset();
+        }
+
+        function updateMember() {
+            const name = document.getElementById("memberName").value;
+            const email = document.getElementById("memberEmail").value;
+            const phone = document.getElementById("memberPhone").value;
+            const token = document.getElementById("memberToken").value;
+            const wallet = document.getElementById("memberWallet").value;
+
+            members[editingIndex] = { name, email, phone, token, wallet };
+            saveMembers();
+            renderMembers();
+            document.getElementById("addMemberForm").reset();
+            editingIndex = -1; // Reset after editing
+        }
+
+        function deleteMember(index) {
+            members.splice(index, 1);
+            saveMembers();
+            renderMembers();
+        }
+
+        function editMember(index) {
+            const member = members[index];
+            document.getElementById("memberName").value = member.name;
+            document.getElementById("memberEmail").value = member.email;
+            document.getElementById("memberPhone").value = member.phone;
+            document.getElementById("memberToken").value = member.token;
+            document.getElementById("memberWallet").value = member.wallet;
+            editingIndex = index;
+        }
+
+        function giveToken(index) {
+            const member = members[index];
+            localStorage.setItem("selectedMember", JSON.stringify(member));
+            window.location.href = "token.html";
+        }
+
+        function renderMembers() {
+            const tableBody = document.getElementById("memberTableBody");
+            tableBody.innerHTML = "";
+            members.forEach((member, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${member.name}</td>
+                    <td>${member.email}</td>
+                    <td>${member.phone}</td>
+                    <td>${member.token}</td>
+                    <td>${member.wallet}</td>
+                    <td><button class="btn btn-primary btn-sm give-token-button" onclick="giveToken(${index})">Give Token</button></td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="editMember(${index})">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteMember(${index})">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function saveMembers() {
+            localStorage.setItem("members", JSON.stringify(members));
+        }
+
+        function loadMembers() {
+            renderMembers();
+        }
+    </script>
+</body>
+
+</html>

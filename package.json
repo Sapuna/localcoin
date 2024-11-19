@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "dev": "lite-server",
+    "build": "mkdir -p dist && cp -r * dist && rm -rf dist/node_modules dist/package.json dist/package-lock.json",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "2.4",
+    "@truffle/hdwallet-provider": "^2.1.15",
+    "dotenv": "^16.0.3",
+    "lite-server": "^2.3.0"
+  }
+}
